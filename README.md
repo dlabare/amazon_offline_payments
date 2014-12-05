@@ -1,6 +1,6 @@
 # AmazonOfflinePayments
 
-TODO: Write a gem description
+An extension to ActiveMerchant that provides access to the AmazonOfflinePamyents API
 
 ## Installation
 
@@ -18,7 +18,28 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+You'll need to start off by getting your seller credentials, you can do that here: https://payments.amazon.com/home
+
+Then you'll need to register to use Amazon MWS: http://docs.developer.amazonservices.com/en_US/dev_guide/DG_Registering.html
+
+Once you have your credentials, you'll need to pass them into your gateway:
+
+    ActiveMerchant::Billing::AmazonOfflinePaymentsGateway.new(:seller_id => 'XXX', :access_key_id => 'YYY', :secret_key => 'ZZZ')
+
+You can also store those credentials the the following ENV variables:
+
+    MWS_SELLER_ID=XXX
+    MWS_ACCESS_KEY_ID=YYY
+    MWS_SECRET_KEY=ZZZ
+
+And they will automatically be used when creating a new gateway:
+
+    ActiveMerchant::Billing::AmazonOfflinePaymentsGateway.new
+
+If you would like to spit out some additional information about the requests/signatures and responses to and from the API, you may pass a :verbose => true flag to the gateway (helpful for debugging)
+
+    ActiveMerchant::Billing::AmazonOfflinePaymentsGateway.new(:verbose => true)
+
 
 ## Contributing
 

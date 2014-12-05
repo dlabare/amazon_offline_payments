@@ -274,10 +274,11 @@ module ActiveMerchant #:nodoc:
         # @see: http://docs.developer.amazonservices.com/en_US/dev_guide/DG_ClientLibraries.html
         #
         def signature(params)
-          path = URI.parse(url = test? ? self.test_url : self.live_url).path
-          data = "POST\nmws.amazonservices.com\n#{path}\n#{stringify_params(params)}"
-          puts data
-          Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha256'), options[:secret_key], data)).strip()
+          path        = URI.parse(url = test? ? self.test_url : self.live_url).path
+          data        = "POST\nmws.amazonservices.com\n#{path}\n#{stringify_params(params)}"
+          sig         = Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha256'), options[:secret_key], data)).strip()
+          verbose('Signature', "Query String:\n#{data}\n\nSignature: #{sig}")
+          return sig
         end
 
         def commit(action, params = {})
@@ -287,9 +288,9 @@ module ActiveMerchant #:nodoc:
           uri = URI.parse(url = test? ? self.test_url : self.live_url)
       
           response_hash = begin
-            http = Net::HTTP.new(uri.host, uri.port)
-            http.use_ssl = true
-            http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+            http              = Net::HTTP.new(uri.host, uri.port)
+            http.use_ssl      = true
+            http.verify_mode  = OpenSSL::SSL::VERIFY_PEER
             
             post_params = Hash.dot_notation(params.merge(default_params(action)))
             post_params['Signature'] = signature(post_params)
@@ -297,8 +298,10 @@ module ActiveMerchant #:nodoc:
             request = Net::HTTP::Post.new(uri.request_uri)
             request.set_form_data(post_params)
             
+            verbose('Request', "#{uri.to_s}?#{request.body}")
             raw_response = http.request(request)
-            puts raw_response.body
+            verbose('Response', raw_response.body)
+            
             hash = Hash.from_xml(raw_response.body)
             
             if error = hash['ErrorResponse']
@@ -317,8 +320,14 @@ module ActiveMerchant #:nodoc:
             Response.new(false, "#{action}: fail", {'Error' => "JSON::ParserError: #{e.message}"}, :test => test?)
           end
         
-          puts "Response: #{response_hash}"
           return response_hash
+        end
+        
+        def verbose(section, msg)
+          return unless options[:verbose]
+          puts "\n[AmazonOfflinePayments: #{section}]"
+          puts msg
+          puts "\n"
         end
       
     end
