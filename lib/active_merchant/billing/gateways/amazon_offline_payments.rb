@@ -308,9 +308,9 @@ module ActiveMerchant #:nodoc:
               Response.new(false, "#{error['Error']['Code']} - #{error['Error']['Message']}", error, :test => test?)
             else
               hash = hash["#{action}Response"]
-              hash = hash.has_key?("#{action}Result") ? hash["#{action}Result"] : hash
-              hash = hash.has_key?("#{action.gsub('Get', '')}") ? hash["#{action.gsub('Get', '')}"] : hash
-              Response.new(true, "#{action}: success", hash, :test => test?)
+              hash = hash && hash.has_key?("#{action}Result") ? hash["#{action}Result"] : hash
+              hash = hash && hash.has_key?("#{action.gsub('Get', '')}") ? hash["#{action.gsub('Get', '')}"] : hash
+              Response.new(true, "#{action}: success", hash || {}, :test => test?)
             end
           rescue NoMethodError => e
             Response.new(false, "#{action}: fail", {'Error' => "NoMethodError: #{e.message}"}, :test => test?)
