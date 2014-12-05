@@ -110,7 +110,7 @@ module ActiveMerchant #:nodoc:
       #
       def close_billing_agreement(options = {})
         requires!(options, :amazon_billing_agreement_id)
-        commit('GetBillingAgreementDetails', options)
+        commit('CloseBillingAgreement', options)
       end
 
       #-----------------------------------------------------------------------#
