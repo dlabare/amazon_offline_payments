@@ -244,7 +244,7 @@ module ActiveMerchant #:nodoc:
       # Returns the status of a particular refund.
       # @see: http://docs.developer.amazonservices.com/en_US/off_amazon_payments/OffAmazonPayments_GetRefundDetails.html
       #
-      def refund(options = {})
+      def get_refund_details(options = {})
         requires!(options, :amazon_refund_id)
         commit('GetRefundDetails', options)
       end
