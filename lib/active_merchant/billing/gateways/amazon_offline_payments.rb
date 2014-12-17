@@ -283,7 +283,6 @@ module ActiveMerchant #:nodoc:
 
         def commit(action, params = {})
           raw_response = response = nil
-          success = false
 
           uri = URI.parse(url = test? ? self.test_url : self.live_url)
 
