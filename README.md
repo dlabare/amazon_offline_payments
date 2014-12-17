@@ -6,15 +6,11 @@ An extension to ActiveMerchant that provides access to the AmazonOfflinePamyents
 
 Add this line to your application's Gemfile:
 
-    gem 'amazon_offline_payments'
+    gem 'amazon_offline_payments', :git => 'https://github.com/dlabare/amazon_offline_payments.git'
 
 And then execute:
 
     $ bundle
-
-Or install it yourself as:
-
-    $ gem install amazon_offline_payments
 
 ## Usage
 
