@@ -5,18 +5,18 @@ module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
 
     class AmazonOfflinePaymentsGateway < Gateway
-      
+
       class_attribute :test_url, :live_url
 
       self.test_url = 'https://mws.amazonservices.com/OffAmazonPayments_Sandbox/2013-01-01/'
       self.live_url = 'https://mws.amazonservices.com/OffAmazonPayments/2013-01-01/'
-      
+
       self.homepage_url = ''
       self.display_name = 'Amazon Offline Payments'
       self.supported_countries = ['US']
       self.default_currency = 'USD'
-      
-      
+
+
       # Creates a new AmazonOfflinePaymentsGateway
       #
       def initialize(options = {})
@@ -24,12 +24,12 @@ module ActiveMerchant #:nodoc:
         options[:access_key_id] ||= ENV['MWS_ACCESS_KEY_ID']
         options[:secret_key]    ||= ENV['MWS_SECRET_KEY']
         options[:version]         = '2013-01-01'
-        
+
         requires!(options, :seller_id, :access_key_id, :secret_key)
         @options = options
         super
       end
-      
+
       # GetServiceStatus
       #
       # Returns the operational status of the Off-Amazon Payments API section.
@@ -42,7 +42,7 @@ module ActiveMerchant #:nodoc:
       #-----------------------------------------------------------------------#
       # Billing Agreement Operations                                          #
       #-----------------------------------------------------------------------#
-      
+
       # CreateOrderReferenceForId
       #
       # Creates an order reference for the given object.
@@ -138,7 +138,7 @@ module ActiveMerchant #:nodoc:
         requires!(options, :amazon_order_reference_id)
         commit('GetOrderReferenceDetails', options)
       end
-      
+
       # ConfirmOrderReference
       #
       # Confirms that the order reference is free of constraints and all required information has been set on the order reference.
@@ -148,7 +148,7 @@ module ActiveMerchant #:nodoc:
         requires!(options, :amazon_order_reference_id)
         commit('ConfirmOrderReference', options)
       end
-      
+
       # CancelOrder
       #
       # Cancels a previously confirmed order reference.
@@ -158,7 +158,7 @@ module ActiveMerchant #:nodoc:
         requires!(options, :amazon_order_reference_id)
         commit('CancelOrderReference', options)
       end
-      
+
       # CloseOrderReference
       #
       # Confirms that an order reference has been fulfilled (fully or partially) and that you do not expect to create any new authorizations on this order reference.
@@ -168,13 +168,13 @@ module ActiveMerchant #:nodoc:
         requires!(options, :amazon_order_reference_id)
         commit('CloseOrderReference', options)
       end
-      
+
       #-----------------------------------------------------------------------#
       # Authorization Operations                                              #
       #-----------------------------------------------------------------------#
-      
+
       # Authorize
-      # 
+      #
       # Reserves a specified amount against the payment method(s) stored in the order reference.
       # @see: http://docs.developer.amazonservices.com/en_US/off_amazon_payments/OffAmazonPayments_Authorize.html
       #
@@ -183,7 +183,7 @@ module ActiveMerchant #:nodoc:
         requires!(options[:authorization_amount], :amount, :currency_code)
         commit('Authorize', options)
       end
-      
+
       # GetAuthorizationDetails
       #
       # Returns the status of a particular authorization and the total amount captured on the authorization.
@@ -193,7 +193,7 @@ module ActiveMerchant #:nodoc:
         requires!(options, :amazon_authorization_id)
         commit('GetAuthorizationDetails', options)
       end
-      
+
       # CloseAuthorization
       #
       # Closes an authorization.
@@ -203,7 +203,7 @@ module ActiveMerchant #:nodoc:
         requires!(options, :amazon_authorization_id)
         commit('CloseAuthorization', options)
       end
-      
+
       # Capture
       #
       # Captures funds from an authorized payment instrument.
@@ -214,7 +214,7 @@ module ActiveMerchant #:nodoc:
         requires!(options[:capture_amount], :amount, :currency_code)
         commit('Capture', options)
       end
-      
+
       # GetCaptureDetails
       #
       # Returns the status of a particular capture and the total amount refunded on the capture.
@@ -248,16 +248,16 @@ module ActiveMerchant #:nodoc:
         requires!(options, :amazon_refund_id)
         commit('GetRefundDetails', options)
       end
-      
+
       private
-    
+
         #
         # commit logic
         #
         def stringify_params(params)
           params.sort_by{|k,v| k}.collect{|p| "#{p.first}=#{CGI.escape(p.last.to_s)}" }.join("&")
         end
-        
+
         def default_params(action)
           {
             'AWSAccessKeyId' => options[:access_key_id],
@@ -286,24 +286,24 @@ module ActiveMerchant #:nodoc:
           success = false
 
           uri = URI.parse(url = test? ? self.test_url : self.live_url)
-      
+
           response = begin
             http              = Net::HTTP.new(uri.host, uri.port)
             http.use_ssl      = true
             http.verify_mode  = OpenSSL::SSL::VERIFY_PEER
-            
+
             post_params = Hash.dot_notation(params.merge(default_params(action)))
             post_params['Signature'] = signature(post_params)
-            
+
             request = Net::HTTP::Post.new(uri.request_uri)
             request.set_form_data(post_params)
-            
+
             verbose('Request', "#{uri.to_s}?#{request.body}")
             raw_response = http.request(request)
             verbose('Response', raw_response.body)
-            
+
             hash = Hash.from_xml(raw_response.body)
-            
+
             if error = hash['ErrorResponse']
               Response.new(false, "#{error['Error']['Code']} - #{error['Error']['Message']}", error, :test => test?)
             else
@@ -312,26 +312,22 @@ module ActiveMerchant #:nodoc:
               hash = hash && hash.has_key?("#{action.gsub('Get', '')}") ? hash["#{action.gsub('Get', '')}"] : hash
               Response.new(true, "#{action}: success", hash || {}, :test => test?)
             end
-          rescue NoMethodError => e
-            Response.new(false, "#{action}: fail", {'Error' => "NoMethodError: #{e.message}"}, :test => test?)
-          rescue ResponseError => e
-            Response.new(false, "#{action}: fail", {'Error' => "ResponseError: #{e.message}"}, :test => test?)
           rescue Exception => e
-            Response.new(false, "#{action}: fail", {'Error' => "Exception: #{e.message}"}, :test => test?)
+            Response.new(false, "#{action}: fail", {'Error' => "#{e.class.name}: #{e.message}"}, :test => test?)
           end
-        
+
           return response
         end
-        
+
         def verbose(section, msg)
           return unless options[:verbose]
           puts "\n[AmazonOfflinePayments: #{section}]"
           puts msg
           puts "\n"
         end
-      
+
     end
-    
+
   end
-  
+
 end
