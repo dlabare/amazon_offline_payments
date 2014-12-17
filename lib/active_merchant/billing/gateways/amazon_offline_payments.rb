@@ -287,7 +287,7 @@ module ActiveMerchant #:nodoc:
 
           uri = URI.parse(url = test? ? self.test_url : self.live_url)
       
-          response_hash = begin
+          response = begin
             http              = Net::HTTP.new(uri.host, uri.port)
             http.use_ssl      = true
             http.verify_mode  = OpenSSL::SSL::VERIFY_PEER
@@ -316,11 +316,11 @@ module ActiveMerchant #:nodoc:
             Response.new(false, "#{action}: fail", {'Error' => "NoMethodError: #{e.message}"}, :test => test?)
           rescue ResponseError => e
             Response.new(false, "#{action}: fail", {'Error' => "ResponseError: #{e.message}"}, :test => test?)
-          rescue JSON::ParserError => e
-            Response.new(false, "#{action}: fail", {'Error' => "JSON::ParserError: #{e.message}"}, :test => test?)
+          rescue Exception => e
+            Response.new(false, "#{action}: fail", {'Error' => "Exception: #{e.message}"}, :test => test?)
           end
         
-          return response_hash
+          return response
         end
         
         def verbose(section, msg)
