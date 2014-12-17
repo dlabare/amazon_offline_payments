@@ -9,8 +9,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Daniel LaBare"]
   spec.email         = ["dlabare@gmail.com"]
   spec.summary       = %q{ActiveMerchant extension for Amazon Offline Payments}
-  spec.description   = %q{}
-  spec.homepage      = ""
+  spec.description   = %q{ActiveMerchant extension for Amazon Offline Payments}
+  spec.homepage      = "https://github.com/dlabare/amazon_offline_payments"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")

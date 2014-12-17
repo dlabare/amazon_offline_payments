@@ -11,7 +11,7 @@ module ActiveMerchant #:nodoc:
       self.test_url = 'https://mws.amazonservices.com/OffAmazonPayments_Sandbox/2013-01-01/'
       self.live_url = 'https://mws.amazonservices.com/OffAmazonPayments/2013-01-01/'
 
-      self.homepage_url = ''
+      self.homepage_url = 'https://github.com/dlabare/amazon_offline_payments'
       self.display_name = 'Amazon Offline Payments'
       self.supported_countries = ['US']
       self.default_currency = 'USD'
