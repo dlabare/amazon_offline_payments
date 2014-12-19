@@ -178,10 +178,28 @@ module ActiveMerchant #:nodoc:
       # Reserves a specified amount against the payment method(s) stored in the order reference.
       # @see: http://docs.developer.amazonservices.com/en_US/off_amazon_payments/OffAmazonPayments_Authorize.html
       #
+      # Note: if you want immediate notification and failure of a declined authorization, you must
+      #       pass a transaction timeout of 0, so I default to that here
+      #       if you prefer to authorize in an asynchronous manner and want to check on authorization
+      #       status later, you can pass a positive integer up to 1440 (24 hours)
+      #
       def authorize(options = {})
         requires!(options, :amazon_order_reference_id, :authorization_reference_id, :authorization_amount)
         requires!(options[:authorization_amount], :amount, :currency_code)
-        commit('Authorize', options)
+        options[:transaction_timeout] ||= 0
+        commit('Authorize', options) do |resp|
+          if error = resp['ErrorResponse']
+            Response.new(false, "#{error['Error']['Code']} - #{error['Error']['Message']}", error, :test => test?)
+          elsif options[:transaction_timeout] == 0
+            resp    = resp['AuthorizeResponse']['AuthorizeResult']
+            status  = resp['AuthorizationDetails']['AuthorizationStatus']
+            success = status['State'].eql?('Open')
+            Response.new(success, success ? "Authorize: success" : "#{status['State']}: #{status['ReasonCode']}", resp || {}, :test => test?)
+          else
+            resp    = resp['AuthorizeResponse']['AuthorizeResult']
+            Response.new(true, "Authorize: success", resp || {}, :test => test?)
+          end
+        end
       end
 
       # GetAuthorizationDetails
@@ -281,7 +299,7 @@ module ActiveMerchant #:nodoc:
           return sig
         end
 
-        def commit(action, params = {})
+        def commit(action, params = {}, &block)
           raw_response = response = nil
 
           uri = URI.parse(url = test? ? self.test_url : self.live_url)
@@ -303,7 +321,9 @@ module ActiveMerchant #:nodoc:
 
             hash = Hash.from_xml(raw_response.body)
 
-            if error = hash['ErrorResponse']
+            if block_given?
+              yield hash
+            elsif error = hash['ErrorResponse']
               Response.new(false, "#{error['Error']['Code']} - #{error['Error']['Message']}", error, :test => test?)
             else
               hash = hash["#{action}Response"]
